@@ -1,15 +1,34 @@
-export type EndpointMethod = "GET" | "POST" | "PUT" | "DELETE";
-
-export interface EndpointDefinition<TParams, TData, TResponse, TSecure extends boolean> {
-    url: string;
-    method: EndpointMethod;
-    secure: TSecure;
-    params?: TParams;
-    data?: TData;
-    response?: TResponse;
+export enum EndpointMethod {
+    Post = "POST",
+    Get = "GET",
+    Put = "PUT",
+    Delete = "DELETE",
 }
 
-export type EndpointArgs<TEndpointDefinition> = TEndpointDefinition extends EndpointDefinition<
+export type EndpointDefinitionParams<T> = { [K in keyof T]: string | number | boolean | undefined };
+export type EndpointDefinitionParamsAllowed<T> = EndpointDefinitionParams<T> | undefined;
+
+export type EndpointDefinitionHeaders = Record<string, string>;
+
+type Secure<T extends boolean> = T extends true ? { secure: T } : { secure?: T };
+
+export type EndpointDefinition<
+    TParams extends EndpointDefinitionParamsAllowed<TParams>,
+    TData,
+    TResponse,
+    TSecure extends boolean = false
+> = {
+    url: string;
+    method: EndpointMethod;
+    params?: TParams;
+    paramsInline?: (keyof TParams)[];
+    data?: TData;
+    response?: TResponse;
+    noFormDataStringify?: boolean;
+    headers?: EndpointDefinitionHeaders;
+} & Secure<TSecure>;
+
+export type EndpointGetArgs<TEndpointDefinition> = TEndpointDefinition extends EndpointDefinition<
     undefined,
     undefined,
     any,
@@ -50,3 +69,14 @@ export type EndpointDefinitionGetResponse<TEndpointDefinition> = TEndpointDefini
 >
     ? TResponse
     : never;
+
+export interface EndpointErrorResponse {
+    response: {
+        status: number;
+        data?: {
+            errorMessage?: string;
+            errorCode?: string;
+            errorData?: any;
+        };
+    };
+}
